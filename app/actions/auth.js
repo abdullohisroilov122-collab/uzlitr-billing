@@ -2,7 +2,7 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { db, normalizePhone } from "@/lib/db";
+import { db, normalizePhone, databaseUrl } from "@/lib/db";
 import { signSession, SESSION_COOKIE, SESSION_HOURS } from "@/lib/session";
 import { loginLocked } from "@/lib/ratelimit";
 import { audit } from "@/lib/audit";
@@ -14,7 +14,7 @@ const DUMMY_HASH = "$2a$12$XnCeMTi7bYG./DNPEi3tYujgkXLhwbmIRR8MDGUfXgTYHxmpaP5S2
 
 // Names the missing setup step instead of failing with a generic server error.
 async function setupProblem() {
-  if (!process.env.DATABASE_URL) return "setup_db";
+  if (!databaseUrl()) return "setup_db";
   if ((process.env.SESSION_SECRET || "").length < 32) return "setup_secret";
   try {
     const sql = await db();
