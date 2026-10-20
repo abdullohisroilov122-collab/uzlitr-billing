@@ -19,7 +19,8 @@ export default async function LoginPage() {
         <div style={{ display: "flex", justifyContent: "center" }}><LangSwitch /></div>
         <LoginForm labels={{
           phone: t("phone"), password: t("password"), submit: t("login_btn"),
-          bad: t("login_bad"), locked: t("login_locked", { min: LOGIN_LOCK_MINUTES })
+          bad: t("login_bad"), locked: t("login_locked", { min: LOGIN_LOCK_MINUTES }),
+          setup_db: t("setup_db"), setup_db_conn: t("setup_db_conn"), setup_secret: t("setup_secret"), setup_admin: t("setup_admin")
         }} />
       </div>
     </div>

@@ -12,7 +12,24 @@ import { LANG_COOKIE, LANGS } from "@/lib/i18n";
 // A real hash to compare against when the phone is unknown, so timing doesn't reveal which phones exist.
 const DUMMY_HASH = "$2a$12$XnCeMTi7bYG./DNPEi3tYujgkXLhwbmIRR8MDGUfXgTYHxmpaP5S2";
 
+// Names the missing setup step instead of failing with a generic server error.
+async function setupProblem() {
+  if (!process.env.DATABASE_URL) return "setup_db";
+  if ((process.env.SESSION_SECRET || "").length < 32) return "setup_secret";
+  try {
+    const sql = await db();
+    const [{ count }] = await sql`SELECT count(*)::int AS count FROM users`;
+    if (count === 0) return "setup_admin";
+  } catch (err) {
+    console.error("Database connection failed", err);
+    return "setup_db_conn";
+  }
+  return null;
+}
+
 export async function login(_prev, formData) {
+  const problem = await setupProblem();
+  if (problem) return { error: problem };
   const phone = normalizePhone(formData.get("phone"));
   const password = String(formData.get("password") || "");
   const ip = clientIp();
