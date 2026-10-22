@@ -5,6 +5,7 @@ import { iconSvg } from "@/components/Icon";
 import { NavLinks } from "@/components/client";
 import LangSwitch from "@/components/LangSwitch";
 import Bell from "@/components/Bell";
+import SoundToggle from "@/components/SoundToggle";
 import UserMenu from "@/components/UserMenu";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +57,7 @@ export default async function PanelLayout({ children }) {
         <header className="top">
           <LangSwitch />
           <div className="top-right">
+            <SoundToggle labels={{ on: t("sound_on"), off: t("sound_off") }} />
             <Bell alerts={alerts} hrefFor={(a) => (a.meterId ? `/meters/${a.meterId}` : a.type === "forward" ? "/" : null)} />
             <UserMenu user={user} settingsHref="/settings" />
           </div>

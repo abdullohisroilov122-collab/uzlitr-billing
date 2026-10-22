@@ -1,6 +1,7 @@
 import "./globals.css";
 import { getLang } from "@/lib/i18n";
 import MenuCloser from "@/components/MenuCloser";
+import SoundEffects from "@/components/SoundEffects";
 
 export const metadata = {
   title: "UZLITR Billing",
@@ -15,7 +16,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
       </head>
-      <body>{children}<MenuCloser /></body>
+      <body>{children}<MenuCloser /><SoundEffects /></body>
     </html>
   );
 }

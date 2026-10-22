@@ -1,69 +1,31 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { play, preload, soundEnabled, setSoundEnabled, onSoundChange } from "@/lib/sounds";
 
 const PULL_TRIGGER = 28; // px the cord has to travel to switch the lamp
-const PULL_MAX = 70;
-const SOUND_KEY = "uzlitr_lamp_sound";
-
-// Pull-chain "click-clack" and a soft hum when the light comes on, synthesised with Web Audio (no audio files).
-function useLampSound() {
-  const ctxRef = useRef(null);
-  const ctx = () => {
-    if (!ctxRef.current) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctxRef.current = new AC();
-    }
-    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
-    return ctxRef.current;
-  };
-  const tick = (ac, at, freq, gain) => {
-    // a short burst of filtered noise plus a quick ping: the metallic "tk" of a pull switch
-    const len = Math.floor(ac.sampleRate * 0.03);
-    const buf = ac.createBuffer(1, len, ac.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 4;
-    const noise = ac.createBufferSource(); noise.buffer = buf;
-    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = 4;
-    const g = ac.createGain(); g.gain.setValueAtTime(gain, at); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
-    noise.connect(bp).connect(g).connect(ac.destination); noise.start(at);
-    const osc = ac.createOscillator(); osc.type = "triangle"; osc.frequency.setValueAtTime(freq * 0.9, at);
-    const og = ac.createGain(); og.gain.setValueAtTime(gain * 0.35, at); og.gain.exponentialRampToValueAtTime(0.0001, at + 0.06);
-    osc.connect(og).connect(ac.destination); osc.start(at); osc.stop(at + 0.07);
-  };
-  const hum = (ac, at) => {
-    // warm swell as the bulb lights
-    const osc = ac.createOscillator(); osc.type = "sine"; osc.frequency.setValueAtTime(110, at); osc.frequency.linearRampToValueAtTime(165, at + 0.35);
-    const osc2 = ac.createOscillator(); osc2.type = "sine"; osc2.frequency.setValueAtTime(330, at); osc2.frequency.linearRampToValueAtTime(495, at + 0.35);
-    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.05, at + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.6);
-    const g2 = ac.createGain(); g2.gain.value = 0.35;
-    osc.connect(g); osc2.connect(g2).connect(g); g.connect(ac.destination);
-    osc.start(at); osc2.start(at); osc.stop(at + 0.62); osc2.stop(at + 0.62);
-  };
-  return {
-    pull(turningOn) {
-      const ac = ctx(); if (!ac) return;
-      const t = ac.currentTime + 0.005;
-      tick(ac, t, 2600, 0.5);           // chain pulled
-      tick(ac, t + 0.11, 1800, 0.35);   // switch snaps back
-      if (turningOn) hum(ac, t + 0.12);
-    }
-  };
-}
+const PULL_MAX = 80;
+const CLICK_PULL = 48;   // how far a plain click pulls the cord before letting go
+// Damped spring for the cord's bounce back, and a slower one for its sideways sway.
+const SPRING = { k: 260, c: 7.5, min: -26 };
+const SWAY = { k: 55, c: 2.2 };
 
 export default function LampScene({ labels, children }) {
   const [on, setOn] = useState(false);
-  const [pull, setPull] = useState(0);
-  const [dragging, setDragging] = useState(false);
   const [sound, setSound] = useState(true);
-  const start = useRef(null);
-  const audio = useLampSound();
-
+  const cord = useRef(null);
   const card = useRef(null);
+  const drag = useRef(null);
+  const anim = useRef(0);
+  const state = useRef({ pull: 0, v: 0, swing: 0, sv: 0 });
   const firstRun = useRef(true);
+  const reduced = useRef(false);
 
   useEffect(() => {
-    try { if (localStorage.getItem(SOUND_KEY) === "off") setSound(false); } catch {}
+    preload();
+    setSound(soundEnabled());
+    reduced.current = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const off = onSoundChange(setSound);
+    return () => { off(); cancelAnimationFrame(anim.current); };
   }, []);
 
   // Once the light is on, put the cursor in the first empty field.
@@ -85,59 +47,111 @@ export default function LampScene({ labels, children }) {
     return () => watch.disconnect();
   }, []);
 
-  const toggle = () => {
-    setOn((v) => {
-      if (sound) audio.pull(!v);
-      return !v;
-    });
+  const paint = () => {
+    const s = state.current;
+    cord.current?.style.setProperty("--pull", `${s.pull.toFixed(2)}px`);
+    cord.current?.style.setProperty("--swing", `${s.swing.toFixed(2)}deg`);
   };
-  const flipSound = () => {
-    setSound((v) => {
-      try { localStorage.setItem(SOUND_KEY, v ? "off" : "on"); } catch {}
-      return !v;
-    });
+
+  const onRef = useRef(false);
+  useEffect(() => { onRef.current = on; }, [on]);
+  const toggle = () => {
+    const next = !onRef.current;
+    onRef.current = next;
+    play(next ? "lampOn" : "lampOff");
+    setOn(next);
+  };
+
+  // Let go: the cord springs back up past its rest point, drops again and settles, swaying a little.
+  const release = (kick = 0) => {
+    cancelAnimationFrame(anim.current);
+    const s = state.current;
+    if (reduced.current) { Object.assign(s, { pull: 0, v: 0, swing: 0, sv: 0 }); paint(); return; }
+    s.sv += kick;
+    let last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      s.v += (-SPRING.k * s.pull - SPRING.c * s.v) * dt;
+      s.pull += s.v * dt;
+      if (s.pull < SPRING.min) { s.pull = SPRING.min; s.v = Math.abs(s.v) * 0.4; }
+      s.sv += (-SWAY.k * s.swing - SWAY.c * s.sv) * dt;
+      s.swing += s.sv * dt;
+      paint();
+      const resting = Math.abs(s.pull) < 0.15 && Math.abs(s.v) < 2 && Math.abs(s.swing) < 0.05 && Math.abs(s.sv) < 0.2;
+      if (resting) { Object.assign(s, { pull: 0, v: 0, swing: 0, sv: 0 }); paint(); return; }
+      anim.current = requestAnimationFrame(step);
+    };
+    anim.current = requestAnimationFrame(step);
+  };
+
+  // A click or Enter: pull the cord down quickly, switch, then let it bounce back.
+  const autoPull = () => {
+    cancelAnimationFrame(anim.current);
+    const s = state.current;
+    if (reduced.current) { toggle(); return; }
+    const from = s.pull, start = performance.now(), dur = 150;
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / dur);
+      s.pull = from + (CLICK_PULL - from) * (1 - (1 - p) ** 3);
+      s.v = 0;
+      paint();
+      if (p < 1) { anim.current = requestAnimationFrame(step); return; }
+      toggle();
+      release((Math.random() < 0.5 ? -1 : 1) * 14);
+    };
+    anim.current = requestAnimationFrame(step);
   };
 
   const onDown = (e) => {
-    start.current = { y: e.clientY, moved: false };
-    setDragging(true);
+    cancelAnimationFrame(anim.current);
+    drag.current = { y: e.clientY - state.current.pull, x: e.clientX, moved: false, lastY: e.clientY, lastT: performance.now(), vy: 0 };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
   const onMove = (e) => {
-    if (!start.current) return;
-    const dy = Math.max(0, Math.min(PULL_MAX, e.clientY - start.current.y));
-    if (dy > 4) start.current.moved = true;
-    setPull(dy);
+    const d = drag.current;
+    if (!d) return;
+    const pull = Math.max(0, Math.min(PULL_MAX, e.clientY - d.y));
+    if (Math.abs(e.clientY - d.lastY) > 0 || pull > 4) d.moved = d.moved || pull > 4;
+    const now = performance.now();
+    d.vy = (e.clientY - d.lastY) / Math.max(1, now - d.lastT) * 1000;
+    d.lastY = e.clientY; d.lastT = now;
+    const s = state.current;
+    s.pull = pull;
+    s.swing = Math.max(-8, Math.min(8, (e.clientX - d.x) * -0.12));
+    paint();
   };
   const onUp = () => {
-    if (!start.current) return;
-    const { moved } = start.current;
-    if (!moved || pull >= PULL_TRIGGER) toggle();
-    start.current = null;
-    setDragging(false);
-    setPull(0);
+    const d = drag.current;
+    if (!d) return;
+    drag.current = null;
+    if (!d.moved) { autoPull(); return; }
+    const s = state.current;
+    if (s.pull >= PULL_TRIGGER) toggle();
+    s.v = Math.min(0, -d.vy * 0.2);
+    release(s.swing * -2);
   };
 
   return (
     <div className={`lamp-scene${on ? " is-on" : ""}`}>
       <div className="lamp-glow" aria-hidden="true" />
-      <button type="button" className="lamp-sound" onClick={flipSound} aria-pressed={sound}
+      <button type="button" className="lamp-sound" onClick={() => setSoundEnabled(!sound)} aria-pressed={sound}
         aria-label={sound ? labels.soundOff : labels.soundOn} title={sound ? labels.soundOff : labels.soundOn}>
         {sound ? "🔊" : "🔇"}
       </button>
 
       <div className="lamp-stage">
-        <div className="lamp" aria-hidden="false">
+        <div className="lamp">
           <div className="lamp-shade"><span className="lamp-bulb" /></div>
           <div className="lamp-beam" aria-hidden="true" />
           <div className="lamp-stem" />
           <div className="lamp-base" />
-          <div className={`lamp-cord${dragging ? " dragging" : ""}`} style={{ "--pull": `${pull}px` }}>
+          <div className="lamp-cord" ref={cord}>
             <span className="lamp-line" />
             <button type="button" className="lamp-knob" aria-pressed={on}
               aria-label={on ? labels.off : labels.on}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }} />
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); autoPull(); } }} />
           </div>
           {!on && <p className="lamp-hint">{labels.hint}<span aria-hidden="true"> ↓</span></p>}
         </div>
