@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { db, normalizePhone } from "@/lib/db";
+import { db } from "@/lib/db";
 import { requireUser, clientIp } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 
@@ -14,13 +14,11 @@ export async function saveMeter(formData) {
     meter_serial: text(formData, "meter_serial"),
     modem_serial: text(formData, "modem_serial"),
     model_id: Number(formData.get("model_id")) || null,
-    account_number: text(formData, "account_number"),
-    owner_name: text(formData, "owner_name"),
-    owner_phone: text(formData, "owner_phone") ? normalizePhone(formData.get("owner_phone")) : null,
-    address: text(formData, "address"),
+    customer_id: Number(formData.get("customer_id")) || null,
+    installed_at: /^\d{4}-\d{2}-\d{2}$/.test(formData.get("installed_at") || "") ? formData.get("installed_at") : null,
     notes: text(formData, "notes")
   };
-  const back = id ? `/meters/${id}` : "/meters/new";
+  const back = id ? `/meters/${id}/edit` : "/meters/new";
   if (!data.modem_serial) redirect(`${back}?err=required`);
 
   const sql = await db();
@@ -36,7 +34,7 @@ export async function saveMeter(formData) {
   } else {
     [{ id: meterId }] = await sql`INSERT INTO meters ${sql(data)} RETURNING id`;
   }
-  await audit(user, id ? "update" : "create", "meter", meterId, { modem_serial: data.modem_serial, meter_serial: data.meter_serial }, clientIp());
+  await audit(user, id ? "update" : "create", "meter", meterId, { modem_serial: data.modem_serial, meter_serial: data.meter_serial, customer_id: data.customer_id }, clientIp());
   revalidatePath("/meters");
   redirect(`/meters/${meterId}?msg=saved`);
 }

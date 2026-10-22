@@ -46,3 +46,18 @@ export async function saveTelegram(formData) {
   }
   redirect("/settings?msg=saved");
 }
+
+// Password change for any signed-in account (the customer portal uses this).
+export async function changePassword(formData) {
+  const user = await requireUser("client");
+  const back = String(formData.get("back") || "/settings");
+  const password = String(formData.get("password") || "");
+  if (!PASSWORD_RULE.test(password)) redirect(`${back}?err=password_rule`);
+  if (password !== String(formData.get("password2") || "")) redirect(`${back}?err=password_mismatch`);
+  const sql = await db();
+  const [row] = await sql`SELECT password_hash FROM users WHERE id = ${user.id}`;
+  if (!(await bcrypt.compare(String(formData.get("current") || ""), row.password_hash))) redirect(`${back}?err=wrong_password`);
+  await sql`UPDATE users SET password_hash = ${await bcrypt.hash(password, 12)} WHERE id = ${user.id}`;
+  await audit(user, "update", "user", user.id, { password_changed: true }, clientIp());
+  redirect(`${back}?msg=saved`);
+}

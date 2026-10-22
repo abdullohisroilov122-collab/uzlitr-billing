@@ -1,34 +1,46 @@
-// GET /api/meters/export — CSV of all meters for signed-in staff.
-import { cookies } from "next/headers";
+// GET /api/meters/export — Excel list of all meters, for signed-in staff.
 import { db } from "@/lib/db";
-import { readSession, SESSION_COOKIE } from "@/lib/session";
+import { currentUser, isStaff } from "@/lib/auth";
 import { STATUS_SQL } from "@/lib/meters";
+import { getT } from "@/lib/i18n";
+import { workbook, xlsxResponse, tashkentDate } from "@/lib/excel";
 
 export const dynamic = "force-dynamic";
 
-const cell = (v) => {
-  const s = v === null || v === undefined ? "" : v instanceof Date ? v.toISOString() : String(v);
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
 export async function GET() {
-  const session = await readSession(cookies().get(SESSION_COOKIE)?.value);
-  if (!session) return new Response("Unauthorized", { status: 401 });
+  const user = await currentUser();
+  if (!isStaff(user)) return new Response("Unauthorized", { status: 401 });
+  const t = getT();
   const sql = await db();
-  const [user] = await sql`SELECT id FROM users WHERE id = ${session.userId} AND is_active`;
-  if (!user) return new Response("Unauthorized", { status: 401 });
-  const rows = await sql.unsafe(`
-    SELECT m.meter_serial, m.modem_serial, md.name AS model, m.account_number, m.owner_name, m.owner_phone,
-           m.address, m.last_value, m.last_battery, m.last_signal, m.last_seen_at, ${STATUS_SQL} AS status
-    FROM meters m LEFT JOIN models md ON md.id = m.model_id ORDER BY m.id`);
-  const head = ["meter_serial", "modem_serial", "model", "account_number", "owner_name", "owner_phone",
-    "address", "last_value_m3", "battery", "signal", "last_seen_at", "status"];
-  const csv = "﻿" + [head.join(","), ...rows.map((r) => [r.meter_serial, r.modem_serial, r.model, r.account_number,
-    r.owner_name, r.owner_phone, r.address, r.last_value, r.last_battery, r.last_signal, r.last_seen_at, r.status].map(cell).join(","))].join("\n");
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="uzlitr-meters-${new Date().toISOString().slice(0, 10)}.csv"`
-    }
+  const rows = await sql`
+    SELECT m.meter_serial, m.modem_serial, md.name AS model, c.name AS customer, c.account_number, c.phone,
+           m.last_value, m.last_battery, m.last_signal, m.last_seen_at, ${sql.unsafe(STATUS_SQL)} AS status
+    FROM meters m LEFT JOIN models md ON md.id = m.model_id LEFT JOIN customers c ON c.id = m.customer_id
+    ORDER BY m.id`;
+  const status = { active: t("st_active"), offline: t("st_offline"), never: t("st_never") };
+  const buffer = await workbook({
+    title: `UZLITRPRO · ${t("meters_title")}`,
+    sheet: t("nav_meters"),
+    columns: [
+      { key: "meter_serial", header: t("meter_serial"), width: 22 },
+      { key: "modem_serial", header: t("modem_serial"), width: 22 },
+      { key: "model", header: t("model"), width: 14 },
+      { key: "customer", header: t("customer"), width: 30 },
+      { key: "account_number", header: t("account_number"), width: 18 },
+      { key: "phone", header: t("phone"), width: 18 },
+      { key: "last_value", header: `${t("reading")}, m³`, width: 14, numFmt: "0.000" },
+      { key: "last_battery", header: `${t("battery")}, V`, width: 12, numFmt: "0.000" },
+      { key: "last_signal", header: t("signal"), width: 10 },
+      { key: "last_seen_at", header: t("last_signal"), width: 20, numFmt: "dd.mm.yyyy hh:mm" },
+      { key: "status", header: t("status"), width: 12 }
+    ],
+    rows: rows.map((r) => ({
+      ...r,
+      last_value: r.last_value === null ? null : Number(r.last_value),
+      last_battery: r.last_battery === null ? null : Number(r.last_battery),
+      last_seen_at: tashkentDate(r.last_seen_at),
+      status: status[r.status]
+    }))
   });
+  return xlsxResponse(buffer, `uzlitrpro-meters-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }

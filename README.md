@@ -10,7 +10,23 @@ Modem / manufacturer platform ──POST /api/ingest──▶ UZLITR (Postgres +
 
 - **Stack:** Next.js 14 on Vercel, Postgres (Neon), no other services.
 - **Languages:** O'zbekcha, Русский, English (switcher in the top bar).
-- **Roles:** SuperAdmin (everything), Admin (users, tokens, models, audit, security), Operator (meters).
+- **Roles:** SuperAdmin (everything), Admin (users, tokens, models, audit, security), Operator (meters and
+  customers), Customer (their own portal only).
+
+## What's inside
+
+- **Customers (Abonentlar):** individuals and companies with INN/PINFL, Vodokanal account number, address and
+  map point. Meters are linked to customers.
+- **Meter dashboard** (staff: `/meters/<id>`, customers: `/portal`): current reading, last 7 days of use with
+  the change against the week before, a daily-use chart for 7/30/90 days, recent readings with the use between
+  them, customer details and an address card with a map.
+- **Reading history:** date range filter, Excel (.xlsx) export, and a details window for each reading.
+- **Customer portal:** give a customer a phone number and password on their page under "Portal access".
+  They see only their own meters and readings.
+- **Alerts (bell):** meters offline, low battery (under 3.1 V), possible leaks (yesterday's use several times
+  above normal) and readings that failed to reach Vodokanal. Computed from live data, so nothing to keep in sync.
+- **Upgrading from v0.1:** on the first request the database adds the new tables and moves each meter's old
+  owner name, phone and account number into a customer record automatically.
 
 ## Deploying on Vercel
 

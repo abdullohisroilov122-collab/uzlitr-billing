@@ -23,10 +23,10 @@ export async function GET(request) {
 
   const sql = await db();
   const rows = await sql`
-    SELECT m.account_number, m.meter_serial, m.modem_serial, r.value, r.battery, r.signal, r.measured_at
-    FROM readings r JOIN meters m ON m.id = r.meter_id
+    SELECT c.account_number, m.meter_serial, m.modem_serial, r.value, r.battery, r.signal, r.measured_at
+    FROM readings r JOIN meters m ON m.id = r.meter_id LEFT JOIN customers c ON c.id = m.customer_id
     WHERE r.measured_at >= ${since}
-      ${account ? sql`AND m.account_number = ${account}` : sql``}
+      ${account ? sql`AND c.account_number = ${account}` : sql``}
       ${meter ? sql`AND m.meter_serial = ${meter}` : sql``}
       ${modem ? sql`AND m.modem_serial = ${modem}` : sql``}
     ORDER BY r.measured_at DESC LIMIT ${limit}`;

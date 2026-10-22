@@ -36,7 +36,7 @@ export async function login(_prev, formData) {
   const sql = await db();
 
   if (!phone || (await loginLocked(phone))) return { error: "locked" };
-  const [user] = await sql`SELECT id, password_hash, is_active FROM users WHERE phone = ${phone}`;
+  const [user] = await sql`SELECT id, role, password_hash, is_active FROM users WHERE phone = ${phone}`;
   const ok = await bcrypt.compare(password, user?.password_hash || DUMMY_HASH);
   await sql`INSERT INTO login_attempts (phone, ip, success) VALUES (${phone}, ${ip}, ${ok && !!user?.is_active})`;
   if (!ok || !user || !user.is_active) return { error: (await loginLocked(phone)) ? "locked" : "bad" };
@@ -46,7 +46,7 @@ export async function login(_prev, formData) {
   cookies().set(SESSION_COOKIE, await signSession(user.id), {
     httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_HOURS * 3600
   });
-  redirect("/");
+  redirect(user.role === "client" ? "/portal" : "/");
 }
 
 export async function logout() {

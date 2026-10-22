@@ -18,7 +18,7 @@ export default async function UsersPage({ searchParams }) {
   const role = ROLES.includes(searchParams.role) ? searchParams.role : "";
   const users = await sql`
     SELECT id, full_name, phone, role, client_type, pinfl, is_active, last_login_at, created_at FROM users
-    WHERE true ${q ? sql`AND (full_name ILIKE ${"%" + q + "%"} OR phone ILIKE ${"%" + q + "%"})` : sql``}
+    WHERE role <> 'client' ${q ? sql`AND (full_name ILIKE ${"%" + q + "%"} OR phone ILIKE ${"%" + q + "%"})` : sql``}
       ${role ? sql`AND role = ${role}` : sql``}
     ORDER BY created_at`;
   const editing = searchParams.edit === "new" ? {} : users.find((u) => String(u.id) === searchParams.edit);
