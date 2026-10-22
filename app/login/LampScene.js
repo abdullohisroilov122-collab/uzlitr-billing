@@ -54,12 +54,10 @@ export default function LampScene({ labels, children }) {
   const anim = useRef(0);
   const state = useRef({ pull: 0, v: 0, swing: 0, sv: 0 });
   const firstRun = useRef(true);
-  const reduced = useRef(false);
 
   useEffect(() => {
     preload();
     setSound(soundEnabled());
-    reduced.current = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     const off = onSoundChange(setSound);
     return () => { off(); cancelAnimationFrame(anim.current); };
   }, []);
@@ -99,10 +97,10 @@ export default function LampScene({ labels, children }) {
   };
 
   // Let go: the cord springs back up past its rest point, drops again and settles, swaying a little.
+  // It runs even with "reduce motion" on: it is brief, only follows the person's own pull, and is the point of the page.
   const release = (kick = 0) => {
     cancelAnimationFrame(anim.current);
     const s = state.current;
-    if (reduced.current) { Object.assign(s, { pull: 0, v: 0, swing: 0, sv: 0 }); paint(); return; }
     s.sv += kick;
     let last = performance.now();
     const step = (now) => {
@@ -125,7 +123,6 @@ export default function LampScene({ labels, children }) {
   const autoPull = () => {
     cancelAnimationFrame(anim.current);
     const s = state.current;
-    if (reduced.current) { toggle(); return; }
     const from = s.pull, start = performance.now(), dur = 150;
     const step = (now) => {
       const p = Math.min(1, (now - start) / dur);
