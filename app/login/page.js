@@ -14,9 +14,9 @@ export default async function LoginPage() {
   return (
     <div className="login-wrap">
       <div className="login">
-        <div className="logo"><img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="210" height="88" /></div>
+        <div className="logo"><img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="240" height="110" /></div>
         <p>{t("login_sub")}</p>
-        <div style={{ display: "flex", justifyContent: "center" }}><LangSwitch /></div>
+        <div style={{ display: "flex", justifyContent: "center" }}><LangSwitch align="center" /></div>
         <LoginForm labels={{
           phone: t("phone"), password: t("password"), submit: t("login_btn"),
           bad: t("login_bad"), locked: t("login_locked", { min: LOGIN_LOCK_MINUTES }),

@@ -40,8 +40,7 @@ export default async function PanelLayout({ children }) {
     <div className="app">
       <aside className="side">
         <div className="brand">
-          <img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="150" height="63" />
-          <small>{t("appTagline")}</small>
+          <img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="180" height="83" />
         </div>
         <nav className="nav">
           {groups.map((g) => (

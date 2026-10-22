@@ -16,10 +16,10 @@ export default async function PortalLayout({ children }) {
     <>
       <header className="portal-top">
         <div className="inner">
-          <Link href="/portal" className="logo"><img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="105" height="44" /></Link>
+          <Link href="/portal" className="logo"><img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="113" height="52" /></Link>
           <span className="slogan">{t("slogan")}</span>
           <div className="top-right" style={{ marginLeft: "auto" }}>
-            <LangSwitch />
+            <LangSwitch align="right" />
             <Bell alerts={alerts} hrefFor={(a) => (a.meterId ? `/portal?meter=${a.meterId}` : null)} />
             <UserMenu user={user} settingsHref="/portal/settings" />
           </div>
