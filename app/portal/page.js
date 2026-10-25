@@ -47,12 +47,10 @@ export default async function PortalHome({ searchParams }) {
         </nav>
       )}
 
-      {meter ? (
-        <MeterDashboard meter={meter} customer={customer} period={period}
-          readingsHref={`/portal/readings?meter=${meter.id}`} periodHref={(p) => `/portal?meter=${meter.id}&period=${p}`} />
-      ) : (
-        <div className="card"><div className="empty"><span className="empty-icon"><Icon name="inbox" size={34} /></span><b>{t("no_meters_yet")}</b><span>{t("no_meters_yet_d")}</span></div></div>
-      )}
+      {!meter && <div className="banner warn" role="status"><b>{t("no_meters_yet")}</b> — {t("no_meters_yet_d")}</div>}
+      <MeterDashboard meter={meter} customer={customer} period={period}
+        readingsHref={meter && `/portal/readings?meter=${meter.id}`}
+        periodHref={(p) => (meter ? `/portal?meter=${meter.id}&period=${p}` : `/portal?period=${p}`)} />
       <MyApplications customerId={user.customer_id} />
     </>
   );

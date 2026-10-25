@@ -77,12 +77,12 @@ export async function UsageCurveCard({ meterIds, period, periodHref }) {
 
 export async function RecentReadings({ meterId, allHref }) {
   const t = getT(), lang = getLang();
-  const rows = await readingsWithUsage(meterId, { limit: 6 });
+  const rows = meterId ? await readingsWithUsage(meterId, { limit: 6 }) : [];
   return (
     <section className="card flush">
       <div className="card-head">
         <h2><span className="ico c-acc"><Icon name="history" /></span>{t("recent_readings")}</h2>
-        <Link className="link" href={allHref}>{t("all")}<Icon name="arrowRight" /></Link>
+        {allHref && <Link className="link" href={allHref}>{t("all")}<Icon name="arrowRight" /></Link>}
       </div>
       {rows.length ? (
         <div className="tablewrap compact">
@@ -162,6 +162,9 @@ export function AddressCard({ customer }) {
 // The whole SWEM-style meter dashboard.
 export function MeterDashboard({ meter, customer, period, readingsHref, periodHref }) {
   // Three columns on wide screens; on phones the cards stack in SWEM's order (o1…o6).
+  // With no meter yet (a new customer) every card still shows, empty, like SWEM.
+  meter = meter || { id: null, last_value: null, last_seen_at: null };
+  readingsHref = meter.id ? readingsHref : null;
   return (
     <div className="dash">
       <div className="col">
@@ -169,8 +172,8 @@ export function MeterDashboard({ meter, customer, period, readingsHref, periodHr
         <div className="o3"><RecentReadings meterId={meter.id} allHref={readingsHref} /></div>
       </div>
       <div className="col">
-        <div className="o2"><WeekCard meterIds={[meter.id]} /></div>
-        <div className="o4"><UsageCurveCard meterIds={[meter.id]} period={period} periodHref={periodHref} /></div>
+        <div className="o2"><WeekCard meterIds={meter.id ? [meter.id] : []} /></div>
+        <div className="o4"><UsageCurveCard meterIds={meter.id ? [meter.id] : []} period={period} periodHref={periodHref} /></div>
       </div>
       <div className="col">
         <div className="o5"><InfoCard customer={customer} meter={meter} /></div>
