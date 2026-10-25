@@ -14,7 +14,8 @@ const NAV = [
   { group: "nav_group_main", items: [
     { href: "/", key: "nav_dashboard", icon: "home", role: "operator" },
     { href: "/meters", key: "nav_meters", icon: "drop", role: "operator" },
-    { href: "/customers", key: "nav_customers", icon: "building", role: "operator" }
+    { href: "/customers", key: "nav_customers", icon: "building", role: "operator" },
+    { href: "/applications", key: "nav_applications", icon: "inbox", role: "operator" }
   ] },
   { group: "nav_group_manage", items: [
     { href: "/models", key: "nav_models", icon: "chip", role: "operator" },
@@ -58,7 +59,7 @@ export default async function PanelLayout({ children }) {
           <LangSwitch />
           <div className="top-right">
             <SoundToggle labels={{ on: t("sound_on"), off: t("sound_off") }} />
-            <Bell alerts={alerts} hrefFor={(a) => (a.meterId ? `/meters/${a.meterId}` : a.type === "forward" ? "/" : null)} />
+            <Bell alerts={alerts} hrefFor={(a) => (a.meterId ? `/meters/${a.meterId}` : a.type === "application" ? "/applications" : a.type === "forward" ? "/" : null)} />
             <UserMenu user={user} settingsHref="/settings" />
           </div>
         </header>

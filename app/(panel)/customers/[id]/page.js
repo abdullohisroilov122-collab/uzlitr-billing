@@ -24,7 +24,7 @@ export default async function CustomerPage({ params, searchParams }) {
     SELECT m.id, m.meter_serial, m.modem_serial, m.last_value, m.last_seen_at, md.name AS model, ${sql.unsafe(STATUS_SQL)} AS status
     FROM meters m LEFT JOIN models md ON md.id = m.model_id WHERE m.customer_id = ${id} ORDER BY m.id`;
   const free = await sql`SELECT id, meter_serial, modem_serial FROM meters WHERE customer_id IS NULL ORDER BY id DESC LIMIT 500`;
-  const [portal] = await sql`SELECT phone, is_active, last_login_at FROM users WHERE customer_id = ${id} AND role = 'client'`;
+  const [portal] = await sql`SELECT phone, login, is_active, last_login_at FROM users WHERE customer_id = ${id} AND role = 'client'`;
 
   return (
     <>
@@ -73,6 +73,8 @@ export default async function CustomerPage({ params, searchParams }) {
             {portal && <div className="meta"><span>{t("status")}: <b>{portal.is_active ? t("on") : t("off")}</b></span><span>{t("last_login")}: <b>{fmtDate(portal.last_login_at, lang)}</b></span></div>}
             <input type="hidden" name="customer_id" value={id} />
             <div className="form">
+              <label>{t("portal_login")}<input className="f mono" name="login" defaultValue={portal?.login ?? meters[0]?.modem_serial ?? ""} placeholder={meters[0]?.modem_serial || ""} />
+                <span className="hint">{t("portal_login_hint")}</span></label>
               <label>{t("login_phone")} *<input className="f mono" name="login_phone" type="tel" defaultValue={portal?.phone ?? customer.phone ?? ""} required /></label>
               <label>{t("password")}{portal ? "" : " *"}<input className="f" name="password" type="password" autoComplete="new-password" required={!portal} />
                 <span className="hint">{portal ? t("password_new_hint") : t("password_rule")}</span></label>

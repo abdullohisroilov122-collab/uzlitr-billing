@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db, normalizePhone, databaseUrl } from "@/lib/db";
-import { signSession, SESSION_COOKIE, SESSION_HOURS } from "@/lib/session";
+import { signSession, SESSION_COOKIE, SESSION_HOURS, REMEMBER_DAYS, readSession } from "@/lib/session";
 import { loginLocked } from "@/lib/ratelimit";
 import { audit } from "@/lib/audit";
 import { clientIp } from "@/lib/auth";
@@ -27,31 +27,51 @@ async function setupProblem() {
   return null;
 }
 
+// Two doors: customers (/login) sign in with their modem number or phone; staff (/admin) with their phone.
 export async function login(_prev, formData) {
   const problem = await setupProblem();
   if (problem) return { error: problem };
-  const phone = normalizePhone(formData.get("phone"));
+  const staffDoor = formData.get("door") === "staff";
+  const identifier = String(formData.get("login") || formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "");
+  const remember = !staffDoor && formData.get("remember") === "on";
   const ip = clientIp();
   const sql = await db();
+  const key = identifier.toLowerCase();
 
-  if (!phone || (await loginLocked(phone))) return { error: "locked" };
-  const [user] = await sql`SELECT id, role, password_hash, is_active FROM users WHERE phone = ${phone}`;
+  if (!identifier || (await loginLocked(key))) return { error: "locked" };
+  const phone = normalizePhone(identifier);
+  const [user] = await sql`
+    SELECT id, role, password_hash, is_active FROM users
+    WHERE lower(login) = ${key} ${phone.length >= 12 ? sql`OR phone = ${phone}` : sql``}
+    ORDER BY (lower(login) = ${key}) DESC NULLS LAST LIMIT 1`;
   const ok = await bcrypt.compare(password, user?.password_hash || DUMMY_HASH);
-  await sql`INSERT INTO login_attempts (phone, ip, success) VALUES (${phone}, ${ip}, ${ok && !!user?.is_active})`;
-  if (!ok || !user || !user.is_active) return { error: (await loginLocked(phone)) ? "locked" : "bad" };
+  const allowed = ok && !!user?.is_active && !(staffDoor && user.role === "client");
+  await sql`INSERT INTO login_attempts (phone, ip, success) VALUES (${key}, ${ip}, ${allowed})`;
+  if (ok && user?.is_active && staffDoor && user.role === "client") return { error: "staff_only" };
+  if (!allowed) return { error: (await loginLocked(key)) ? "locked" : "bad" };
 
   await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
-  await audit(user, "login", "user", user.id, null, ip);
-  cookies().set(SESSION_COOKIE, await signSession(user.id), {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_HOURS * 3600
+  await audit(user, "login", "user", user.id, { door: staffDoor ? "staff" : "customer", remember }, ip);
+  const hours = remember ? REMEMBER_DAYS * 24 : SESSION_HOURS;
+  cookies().set(SESSION_COOKIE, await signSession(user.id, hours), {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/",
+    ...(remember || staffDoor ? { maxAge: hours * 3600 } : {})
   });
   redirect(user.role === "client" ? "/portal" : "/");
 }
 
 export async function logout() {
+  // Send people back to the door they came in by.
+  const session = await readSession(cookies().get(SESSION_COOKIE)?.value);
+  let to = "/login";
+  if (session) {
+    const sql = await db();
+    const [u] = await sql`SELECT role FROM users WHERE id = ${session.userId}`;
+    if (u && u.role !== "client") to = "/admin";
+  }
   cookies().delete(SESSION_COOKIE);
-  redirect("/login");
+  redirect(to);
 }
 
 export async function setLanguage(formData) {

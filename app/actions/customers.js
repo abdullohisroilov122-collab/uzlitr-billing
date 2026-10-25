@@ -97,14 +97,24 @@ export async function savePortalAccess(formData) {
   if (password && !PASSWORD_RULE.test(password)) redirect(`${back}?err=password_rule`);
   const [clash] = await sql`SELECT id FROM users WHERE phone = ${phone} AND id IS DISTINCT FROM ${existing?.id ?? null}`;
   if (clash) redirect(`${back}?err=phone_taken`);
+  // Customers sign in with a login (usually their modem number); default to the first meter's modem.
+  let login = String(formData.get("login") || "").trim().slice(0, 32);
+  if (!login) {
+    const [first] = await sql`SELECT modem_serial FROM meters WHERE customer_id = ${customerId} ORDER BY id LIMIT 1`;
+    login = first?.modem_serial || null;
+  }
+  if (login) {
+    const [taken] = await sql`SELECT id FROM users WHERE lower(login) = lower(${login}) AND id IS DISTINCT FROM ${existing?.id ?? null}`;
+    if (taken) redirect(`${back}?err=login_taken`);
+  }
 
   const data = {
-    full_name: customer.name, phone, role: "client", customer_id: customerId, is_active: active,
+    full_name: customer.name, phone, login, role: "client", customer_id: customerId, is_active: active,
     client_type: customer.kind === "legal" ? "legal" : "individual",
     ...(password && { password_hash: await bcrypt.hash(password, 12) })
   };
   if (existing) await sql`UPDATE users SET ${sql(data)} WHERE id = ${existing.id}`;
   else await sql`INSERT INTO users ${sql(data)}`;
-  await audit(user, existing ? "update" : "create", "portal_access", customerId, { phone, active, password_changed: !!password }, clientIp());
+  await audit(user, existing ? "update" : "create", "portal_access", customerId, { phone, login, active, password_changed: !!password }, clientIp());
   redirect(`${back}?msg=saved`);
 }

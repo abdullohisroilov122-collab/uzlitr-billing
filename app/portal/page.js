@@ -6,6 +6,7 @@ import { loadMeter } from "@/lib/meterData";
 import { periodFrom } from "@/lib/usage";
 import Icon from "@/components/Icon";
 import { MeterDashboard, addressLines } from "@/components/dash";
+import MyApplications from "@/components/MyApplications";
 
 export default async function PortalHome({ searchParams }) {
   const user = await requireClient();
@@ -22,6 +23,11 @@ export default async function PortalHome({ searchParams }) {
   return (
     <>
       <section className="welcome">
+        <svg className="welcome-wave" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 80 C 120 40, 240 110, 360 70 S 540 50, 600 75 L600 120 L0 120 Z" fill="currentColor" opacity=".18" />
+          <path d="M0 95 C 150 70, 260 120, 400 90 S 560 80, 600 92 L600 120 L0 120 Z" fill="currentColor" opacity=".14" />
+        </svg>
+        <span className="welcome-dots" aria-hidden="true"><i /><i /><i /><i /><i /></span>
         <div className="badge"><Icon name={customer.kind === "legal" ? "building" : "user"} /></div>
         <div style={{ minWidth: 0 }}>
           <h1>{customer.name}</h1>
@@ -45,8 +51,9 @@ export default async function PortalHome({ searchParams }) {
         <MeterDashboard meter={meter} customer={customer} period={period}
           readingsHref={`/portal/readings?meter=${meter.id}`} periodHref={(p) => `/portal?meter=${meter.id}&period=${p}`} />
       ) : (
-        <div className="card"><div className="empty"><b>{t("no_meters_yet")}</b><span>{t("no_meters_yet_d")}</span></div></div>
+        <div className="card"><div className="empty"><span className="empty-icon"><Icon name="inbox" size={34} /></span><b>{t("no_meters_yet")}</b><span>{t("no_meters_yet_d")}</span></div></div>
       )}
+      <MyApplications customerId={user.customer_id} />
     </>
   );
 }

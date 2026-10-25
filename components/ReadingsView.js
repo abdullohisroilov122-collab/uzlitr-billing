@@ -4,6 +4,7 @@ import { fmtDate } from "@/lib/format";
 import { readingsWithUsage, countReadings, dateRange } from "@/lib/usage";
 import Icon from "./Icon";
 import ReadingsTable from "./ReadingsTable";
+import { EmptyReadings } from "./dash";
 
 const PER_PAGE = 100;
 const num = (v, d = 3) => (v === null || v === undefined ? "—" : (+Number(v).toFixed(d)).toString());
@@ -58,7 +59,7 @@ export default async function ReadingsView({ meter, searchParams, backHref, base
             meter_serial: t("meter_serial"), modem_serial: t("modem_serial"), received: t("received_at"),
             meterSerial: meter.meter_serial, modemSerial: meter.modem_serial
           }} />
-        ) : <div className="empty"><b>{t("no_readings")}</b>{(fromStr || toStr) && <span>{t("try_other_dates")}</span>}</div>}
+        ) : <EmptyReadings label={fromStr || toStr ? t("try_other_dates") : t("no_readings_yet")} />}
       </div>
       {pages > 1 ? (
         <div className="pager" style={{ padding: "14px 20px", borderTop: "1px solid var(--line)" }}>

@@ -4,6 +4,7 @@ import { getT, getLang, LOCALES } from "@/lib/i18n";
 import { fmtDate } from "@/lib/format";
 import { dailyUsage, weekComparison, readingsWithUsage, PERIODS } from "@/lib/usage";
 import Icon from "./Icon";
+import PeriodSelect from "./PeriodSelect";
 
 const m3 = (v, digits = 3) =>
   v === null || v === undefined ? "—" : Number(v).toLocaleString("en-US", { maximumFractionDigits: digits }).replace(/,/g, " ");
@@ -22,7 +23,7 @@ export function HeroReading({ meter, href }) {
         {href && <Link className="go" href={href} aria-label={t("readings_history")}><Icon name="arrowRight" /></Link>}
       </div>
       <div className="value">{m3(meter.last_value)}<small>m³</small></div>
-      <div className="when"><Icon name="calendar" />{meter.last_seen_at ? fmtDate(meter.last_seen_at, lang, true, true) : t("no_readings")}</div>
+      <div className="when"><Icon name="calendar" />{meter.last_seen_at ? fmtDate(meter.last_seen_at, lang, true, true) : "—"}</div>
     </section>
   );
 }
@@ -66,11 +67,8 @@ export async function UsageCurveCard({ meterIds, period, periodHref }) {
     <section className="card chart">
       <div className="card-head">
         <h2><span className="ico c-acc"><Icon name="chart" /></span>{t("usage_chart")}</h2>
-        <nav className="tabs" aria-label={t("period")}>
-          {PERIODS.map((p) => (
-            <Link key={p} href={periodHref(p)} scroll={false} aria-current={p === period ? "page" : undefined}>{t("n_days", { n: p })}</Link>
-          ))}
-        </nav>
+        <PeriodSelect value={period} label={t("period")}
+          options={PERIODS.map((p) => ({ value: p, label: t("last_n_days", { n: p }), href: periodHref(p) }))} />
       </div>
       <SmoothChart rows={rows} lang={lang} unit={t("usage_unit")} />
     </section>
@@ -100,8 +98,17 @@ export async function RecentReadings({ meterId, allHref }) {
             </tbody>
           </table>
         </div>
-      ) : <div className="empty">{t("no_readings")}</div>}
+      ) : <EmptyReadings label={t("no_readings_yet")} head={[t("date"), t("reading")]} />}
     </section>
+  );
+}
+
+export function EmptyReadings({ label, head }) {
+  return (
+    <>
+      {head && <div className="empty-head">{head.map((h) => <span key={h}>{h}</span>)}</div>}
+      <div className="empty"><span className="empty-icon"><Icon name="inbox" size={34} /></span><span>{label}</span></div>
+    </>
   );
 }
 
@@ -133,20 +140,20 @@ export function AddressCard({ customer }) {
   const lines = addressLines(customer);
   const hasPoint = customer?.latitude != null && customer?.longitude != null;
   const lat = Number(customer?.latitude), lng = Number(customer?.longitude);
-  const d = 0.004;
   const mapHref = hasPoint
     ? `https://yandex.uz/maps/?pt=${lng},${lat}&z=16&l=map`
     : lines.length ? `https://yandex.uz/maps/?text=${encodeURIComponent(lines.join(", "))}` : null;
   return (
     <section className="card">
       <h2><span className="ico c-red"><Icon name="pin" /></span>{t("address")}</h2>
-      <div className="map">
-        <div className="lines">{lines.length ? lines.map((l) => <span key={l}>{l}</span>) : <span className="muted">{t("no_address")}</span>}</div>
-        {hasPoint
-          ? <iframe title={t("address")} loading="lazy" referrerPolicy="no-referrer"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - d},${lat - d},${lng + d},${lat + d}&layer=mapnik&marker=${lat},${lng}`} />
-          : <div className="ph"><Icon name="map" /></div>}
+      <div className="addr-lines">
+        {lines.length ? lines.map((l, i) => <span key={l}>{i === lines.length - 1 && customer?.house === l ? `${t("house")}: ${l}` : l}</span>)
+          : <span className="muted">{t("no_address")}</span>}
       </div>
+      {hasPoint
+        ? <iframe className="addr-map" title={t("address")} loading="lazy" referrerPolicy="no-referrer"
+            src={`https://yandex.uz/map-widget/v1/?ll=${lng},${lat}&z=16&pt=${lng},${lat},pm2rdm&lang=uz_UZ`} />
+        : <div className="addr-map ph"><Icon name="map" size={30} /><span>{t("no_map_point")}</span></div>}
       {mapHref && <a className="btn soft" href={mapHref} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start" }}><Icon name="pin" />{t("show_on_map")}<Icon name="arrowRight" /></a>}
     </section>
   );
@@ -154,19 +161,20 @@ export function AddressCard({ customer }) {
 
 // The whole SWEM-style meter dashboard.
 export function MeterDashboard({ meter, customer, period, readingsHref, periodHref }) {
+  // Three columns on wide screens; on phones the cards stack in SWEM's order (o1…o6).
   return (
     <div className="dash">
       <div className="col">
-        <HeroReading meter={meter} href={readingsHref} />
-        <RecentReadings meterId={meter.id} allHref={readingsHref} />
+        <div className="o1"><HeroReading meter={meter} href={readingsHref} /></div>
+        <div className="o3"><RecentReadings meterId={meter.id} allHref={readingsHref} /></div>
       </div>
       <div className="col">
-        <WeekCard meterIds={[meter.id]} />
-        <UsageCurveCard meterIds={[meter.id]} period={period} periodHref={periodHref} />
+        <div className="o2"><WeekCard meterIds={[meter.id]} /></div>
+        <div className="o4"><UsageCurveCard meterIds={[meter.id]} period={period} periodHref={periodHref} /></div>
       </div>
       <div className="col">
-        <InfoCard customer={customer} meter={meter} />
-        <AddressCard customer={customer} />
+        <div className="o5"><InfoCard customer={customer} meter={meter} /></div>
+        <div className="o6"><AddressCard customer={customer} /></div>
       </div>
     </div>
   );

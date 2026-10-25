@@ -13,7 +13,8 @@ export default function Bell({ alerts, hrefFor }) {
     offline: [t("al_offline"), t("al_offline_d", { ago: fmtAgo(a.at, lang) })],
     battery: [t("al_battery"), t("al_battery_d", { v: a.value?.toFixed(2) })],
     leak: [t("al_leak"), t("al_leak_d", { v: a.value?.toFixed(3) })],
-    forward: [t("al_forward"), t("al_forward_d", { n: a.value })]
+    forward: [t("al_forward"), t("al_forward_d", { n: a.value })],
+    application: [t("al_application"), t("al_application_d", { n: a.value })]
   }[a.type]);
   return (
     <details className="menu">
