@@ -3,9 +3,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { checkModem, submitRegistration } from "@/app/actions/register";
 
-const STEPS = 4;
+const STEPS = 2;
 
-// Modem number first; then who you are, your address and a password, one step at a time.
+// Two steps: check the modem number, then everything else on one page.
 export default function RegisterWizard({ L, regions }) {
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -21,14 +21,10 @@ export default function RegisterWizard({ L, regions }) {
     if (r.status === "ok") { setF((v) => ({ ...v, modem: r.modem })); setStep(2); }
     else setError(L[`modem_${r.status}`] || L.error);
   };
-  const next = (e) => {
-    e.preventDefault(); setError("");
-    if (step === 2 && f.kind === "legal" && !/^\d{9}$/.test(f.inn)) return setError(L.bad_inn);
-    if (step === 2 && f.pinfl && !/^\d{14}$/.test(f.pinfl)) return setError(L.bad_pinfl);
-    setStep((s) => s + 1);
-  };
   const submit = async (e) => {
     e.preventDefault(); setError("");
+    if (f.kind === "legal" && !/^\d{9}$/.test(f.inn)) return setError(L.bad_inn);
+    if (f.pinfl && !/^\d{14}$/.test(f.pinfl)) return setError(L.bad_pinfl);
     if (f.password !== f.password2) return setError(L.password_mismatch);
     setBusy(true);
     const r = await submitRegistration(f).catch(() => ({ error: "error" }));
@@ -58,7 +54,7 @@ export default function RegisterWizard({ L, regions }) {
     <div className="reg">
       {step > 1 && (
         <div className="reg-steps" aria-label={L.step_of.replace("{n}", step).replace("{total}", STEPS)}>
-          {[1, 2, 3, 4].map((n) => <span key={n} className={n <= step ? "on" : ""} />)}
+          {[1, 2].map((n) => <span key={n} className={n <= step ? "on" : ""} />)}
           <small>{L.step_of.replace("{n}", step).replace("{total}", STEPS)}</small>
         </div>
       )}
@@ -74,8 +70,8 @@ export default function RegisterWizard({ L, regions }) {
       )}
 
       {step === 2 && (
-        <form onSubmit={next} className="reg-box">
-          <div className="reg-found">✓ {L.modem_found} <b className="mono">{f.modem}</b></div>
+        <form onSubmit={submit} className="reg-box">
+          <div className="reg-found">✓ {L.modem_found} <b className="mono">{f.modem}</b> · {L.login_will_be} <b className="mono">{f.modem}</b></div>
           <div className="reg-kind" role="radiogroup" aria-label={L.who}>
             {["individual", "legal"].map((k) => (
               <button key={k} type="button" role="radio" aria-checked={f.kind === k} className={`btn ${f.kind === k ? "primary" : ""}`}
@@ -83,33 +79,23 @@ export default function RegisterWizard({ L, regions }) {
             ))}
           </div>
           {field("name", f.kind === "legal" ? L.company_name : L.full_name, { required: true, autoFocus: true })}
-          {field("phone", L.phone, { required: true, type: "tel", placeholder: "+998 90 123 45 67" })}
-          {f.kind === "legal"
-            ? field("inn", L.inn, { required: true, inputMode: "numeric", maxLength: 9, placeholder: "305081846" })
-            : field("pinfl", L.pinfl, { inputMode: "numeric", maxLength: 14 })}
-          <div className="reg-nav"><button type="button" className="btn" onClick={() => setStep(1)}>{L.back}</button><button className="btn primary" type="submit">{L.next}</button></div>
-        </form>
-      )}
-
-      {step === 3 && (
-        <form onSubmit={next} className="reg-box">
-          <label className="auth-field">{L.region} *
-            <input className="f" list="reg-regions" value={f.region} onChange={set("region")} required autoFocus />
-            <datalist id="reg-regions">{regions.map((r) => <option key={r} value={r} />)}</datalist>
-          </label>
-          {field("district", L.district)}
-          {field("street", L.street, { required: true })}
-          {field("house", L.house)}
-          <div className="reg-nav"><button type="button" className="btn" onClick={() => setStep(2)}>{L.back}</button><button className="btn primary" type="submit">{L.next}</button></div>
-        </form>
-      )}
-
-      {step === 4 && (
-        <form onSubmit={submit} className="reg-box">
-          <div className="reg-found">{L.login_will_be} <b className="mono">{f.modem}</b></div>
-          {field("password", L.password, { required: true, type: "password", autoComplete: "new-password", hint: L.password_rule, autoFocus: true })}
-          {field("password2", L.password2, { required: true, type: "password", autoComplete: "new-password" })}
-          <div className="reg-nav"><button type="button" className="btn" onClick={() => setStep(3)}>{L.back}</button>
+          <div className="reg-grid">
+            {field("phone", L.phone, { required: true, type: "tel", placeholder: "+998 90 123 45 67" })}
+            {f.kind === "legal"
+              ? field("inn", L.inn, { required: true, inputMode: "numeric", maxLength: 9, placeholder: "305081846" })
+              : field("pinfl", L.pinfl, { inputMode: "numeric", maxLength: 14 })}
+            <label className="auth-field">{L.region} *
+              <input className="f" list="reg-regions" value={f.region} onChange={set("region")} required />
+              <datalist id="reg-regions">{regions.map((r) => <option key={r} value={r} />)}</datalist>
+            </label>
+            {field("district", L.district)}
+            {field("street", L.street, { required: true })}
+            {field("house", L.house)}
+            {field("password", L.password, { required: true, type: "password", autoComplete: "new-password" })}
+            {field("password2", L.password2, { required: true, type: "password", autoComplete: "new-password" })}
+          </div>
+          <span className="hint" style={{ marginTop: -6 }}>{L.password_rule}</span>
+          <div className="reg-nav"><button type="button" className="btn" onClick={() => { setError(""); setStep(1); }}>{L.back}</button>
             <button className="btn primary" type="submit" disabled={busy}>{busy ? L.sending : L.submit}</button></div>
         </form>
       )}

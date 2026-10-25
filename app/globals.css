@@ -536,3 +536,6 @@ a.kpi:hover { transform: translateY(-2px); border-color: rgba(56, 189, 248, .55)
 .auth-staff:hover { color: var(--accent); }
 .lamp-back { justify-content: center; margin-top: 4px; color: var(--muted); font-size: 13px; }
 .auth-banner .lang *, .auth-banner .lang svg { color: #fff; }
+.reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.reg .hint { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 520px) { .reg-grid { grid-template-columns: 1fr; } }
