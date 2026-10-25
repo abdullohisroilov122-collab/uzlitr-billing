@@ -6,14 +6,33 @@ import { LOGIN_LOCK_MINUTES } from "@/lib/ratelimit";
 import LangSwitch from "@/components/LangSwitch";
 import Icon from "@/components/Icon";
 import LoginForm from "./LoginForm";
+import LampScene from "./LampScene";
 
 export const dynamic = "force-dynamic";
 
-// Customer sign-in (SWEM-style): banner, then a card with login, password, remember me and self-registration.
-export default async function LoginPage() {
+// One sign-in page for everyone. Customers see the SWEM-style card; ?staff=1 shows the pull-cord lamp for staff.
+// Staff can also sign in from the customer card with their phone number.
+export default async function LoginPage({ searchParams }) {
   const user = await currentUser().catch(() => null);
   if (user) redirect(user.role === "client" ? "/portal" : "/");
   const t = getT();
+  const setup = { setup_db: t("setup_db"), setup_db_conn: t("setup_db_conn"), setup_secret: t("setup_secret"), setup_admin: t("setup_admin") };
+  if (searchParams?.staff) return (
+    <div className="lamp-root">
+      <div className="lamp-lang"><LangSwitch /></div>
+      <LampScene labels={{ hint: t("lamp_hint"), on: t("lamp_on"), off: t("lamp_off"), soundOn: t("sound_on"), soundOff: t("sound_off") }}>
+        <div className="login">
+          <div className="logo"><img src="/brand/uzlitrpro-logo.png" alt="UZLITRPRO" width="220" height="101" /></div>
+          <p>{t("staff_login_sub")}</p>
+          <LoginForm door="staff" labels={{
+            phone: t("phone"), password: t("password"), submit: t("login_btn"),
+            bad: t("login_bad"), locked: t("login_locked", { min: LOGIN_LOCK_MINUTES }), staff_only: t("staff_only"), ...setup
+          }} />
+          <Link className="link lamp-back" href="/login"><Icon name="arrowLeft" />{t("customer_login_link")}</Link>
+        </div>
+      </LampScene>
+    </div>
+  );
   return (
     <div className="auth-page">
       <header className="auth-banner">
@@ -38,6 +57,7 @@ export default async function LoginPage() {
         <div className="auth-divider" />
         <p className="auth-sub">{t("no_login_yet")}</p>
         <Link className="btn soft auth-register" href="/register">{t("register_meter")}<Icon name="arrowRight" /></Link>
+        <Link className="auth-staff" href="/login?staff=1">💡 {t("staff_login_link")}</Link>
       </main>
     </div>
   );

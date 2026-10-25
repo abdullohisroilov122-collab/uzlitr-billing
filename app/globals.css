@@ -532,3 +532,7 @@ a.kpi:hover { transform: translateY(-2px); border-color: rgba(56, 189, 248, .55)
   .welcome .tip { max-width: none; }
   .kv { grid-template-columns: 1fr; }
 }
+.auth-staff { align-self: center; color: var(--muted); font-size: 12.5px; padding: 4px 10px; border-radius: 8px; }
+.auth-staff:hover { color: var(--accent); }
+.lamp-back { justify-content: center; margin-top: 4px; color: var(--muted); font-size: 13px; }
+.auth-banner .lang *, .auth-banner .lang svg { color: #fff; }

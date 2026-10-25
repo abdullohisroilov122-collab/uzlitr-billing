@@ -8,7 +8,7 @@ export async function middleware(request) {
   if (!session) {
     const url = request.nextUrl.clone();
     const path = request.nextUrl.pathname;
-    url.pathname = path === "/" || path.startsWith("/portal") ? "/login" : "/admin";
+    url.pathname = "/login";
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -16,5 +16,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/((?!login|admin|register|api|brand|sounds|icon.png|_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!login|register|api|brand|sounds|icon.png|_next/static|_next/image|favicon.ico).*)"]
 };

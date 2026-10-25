@@ -27,7 +27,7 @@ async function setupProblem() {
   return null;
 }
 
-// Two doors: customers (/login) sign in with their modem number or phone; staff (/admin) with their phone.
+// One /login page: the customer card takes a modem number or phone (staff may use it too); ?staff=1 is the lamp form for staff only.
 export async function login(_prev, formData) {
   const problem = await setupProblem();
   if (problem) return { error: problem };
@@ -68,7 +68,7 @@ export async function logout() {
   if (session) {
     const sql = await db();
     const [u] = await sql`SELECT role FROM users WHERE id = ${session.userId}`;
-    if (u && u.role !== "client") to = "/admin";
+    if (u && u.role !== "client") to = "/login?staff=1";
   }
   cookies().delete(SESSION_COOKIE);
   redirect(to);
