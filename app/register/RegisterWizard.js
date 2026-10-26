@@ -11,7 +11,7 @@ export default function RegisterWizard({ L, regions }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(null);
-  const [f, setF] = useState({ modem: "", kind: "individual", name: "", phone: "", inn: "", pinfl: "", region: "", district: "", street: "", house: "", password: "", password2: "" });
+  const [f, setF] = useState({ modem: "", kind: "individual", name: "", phone: "", inn: "", pinfl: "", region: "", district: "", street: "", house: "", cadastr_number: "", password: "", password2: "" });
   const set = (k) => (e) => setF((v) => ({ ...v, [k]: e.target.value }));
 
   const check = async (e) => {
@@ -91,6 +91,7 @@ export default function RegisterWizard({ L, regions }) {
             {field("district", L.district)}
             {field("street", L.street, { required: true })}
             {field("house", L.house)}
+            {field("cadastr_number", L.cadastr_number, { className: "f mono" })}
             {field("password", L.password, { required: true, type: "password", autoComplete: "new-password" })}
             {field("password2", L.password2, { required: true, type: "password", autoComplete: "new-password" })}
           </div>

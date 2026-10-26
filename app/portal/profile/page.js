@@ -29,7 +29,7 @@ export default async function ProfilePage() {
         <hr />
         <h3><Icon name="pin" size={18} />{t("address_info")}</h3>
         <div className="kv">
-          {row(t("region"), c.region)}{row(t("district"), c.district)}{row(t("street"), c.street)}{row(t("house"), c.house)}
+          {row(t("region"), c.region)}{row(t("district"), c.district)}{row(t("street"), c.street)}{row(t("house"), c.house)}{row(t("cadastr_number"), c.cadastr_number, true)}
           {row(t("coordinates"), c.latitude != null ? `${c.latitude}, ${c.longitude}` : null, true)}
         </div>
         <p className="muted" style={{ fontSize: 13 }}>{t("profile_change_hint")}</p>

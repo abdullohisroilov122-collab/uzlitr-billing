@@ -8,6 +8,7 @@ import Icon from "@/components/Icon";
 import Status from "@/components/Status";
 import Flash from "@/components/Flash";
 import { MeterDashboard } from "@/components/dash";
+import VodokanalCard from "@/components/VodokanalCard";
 
 export default async function MeterPage({ params, searchParams }) {
   await requireUser();
@@ -31,6 +32,7 @@ export default async function MeterPage({ params, searchParams }) {
       <Flash searchParams={searchParams} />
       <MeterDashboard meter={meter} customer={customer} period={period}
         readingsHref={`/meters/${meter.id}/readings`} periodHref={(p) => `/meters/${meter.id}?period=${p}`} />
+      <VodokanalCard meter={meter} customer={customer} />
     </>
   );
 }

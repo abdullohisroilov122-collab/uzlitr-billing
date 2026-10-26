@@ -39,6 +39,7 @@ export default function CustomerForm({ customer = {} }) {
         {f("district", t("district"), { ph: "Yangihayot tumani" })}
         {f("street", t("street"), { ph: "Xushnud ko'chasi" })}
         {f("house", t("house"), { ph: "18" })}
+        {f("cadastr_number", t("cadastr_number"), { mono: true, ph: "10:05:03:01:01:0123" })}
         {f("latitude", t("latitude"), { mono: true, ph: "41.2995", hint: t("coords_hint") })}
         {f("longitude", t("longitude"), { mono: true, ph: "69.2401" })}
         <datalist id="regions">{REGIONS.map((r) => <option key={r} value={r} />)}</datalist>

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default function RegisterPage() {
   const t = getT();
   const keys = ["modem", "modem_hint", "check", "checking", "modem_found", "who", "individual", "legal", "company_name", "full_name",
-    "phone", "inn", "pinfl", "region", "district", "street", "house", "back", "next", "login_will_be", "password", "password2",
+    "phone", "inn", "pinfl", "region", "district", "street", "house", "cadastr_number", "back", "next", "login_will_be", "password", "password2",
     "password_rule", "submit", "sending", "done_title", "done_text", "your_login", "to_login", "step_of", "error",
     "modem_ok", "modem_not_found", "modem_taken", "modem_pending", "modem_invalid", "modem_rate", "modem_error", "rate", "required",
     "bad_inn", "bad_pinfl", "password_mismatch", "phone_taken"];

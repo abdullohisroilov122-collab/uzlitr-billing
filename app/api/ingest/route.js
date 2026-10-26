@@ -42,7 +42,7 @@ export async function POST(request) {
     else accepted++;
   }
 
-  if (accepted) await forwardPending({ limit: 100 }).catch(() => {});
+  if (accepted) await forwardPending({ limit: 20, budgetMs: 8000 }).catch(() => {});
   const status = errors.length && !accepted && !duplicates ? 400 : 200;
   return NextResponse.json({ ok: status === 200, accepted, duplicates, errors }, { status });
 }

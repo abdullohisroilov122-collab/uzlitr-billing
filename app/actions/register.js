@@ -47,7 +47,8 @@ export async function submitRegistration(input) {
     phone: normalizePhone(input.phone),
     inn: kind === "legal" ? clean(input.inn, 9) : null,
     pinfl: kind === "individual" ? clean(input.pinfl, 14) || null : null,
-    region: clean(input.region), district: clean(input.district), street: clean(input.street), house: clean(input.house, 20)
+    region: clean(input.region), district: clean(input.district), street: clean(input.street), house: clean(input.house, 20),
+    cadastr_number: clean(input.cadastr_number, 40) || null
   };
   const password = String(input.password || "");
   if (!MODEM_RE.test(modem) || !data.name || data.phone.length < 12 || !data.region || !data.street) return { error: "required" };

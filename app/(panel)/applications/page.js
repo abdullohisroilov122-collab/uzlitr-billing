@@ -40,7 +40,7 @@ export default async function ApplicationsPage({ searchParams }) {
           const rows = a.kind === "register"
             ? [[t("client_type"), t(d.kind === "legal" ? "ct_legal" : "ct_individual")], [t("name"), d.name], [t("phone"), d.phone],
                [d.kind === "legal" ? t("inn") : t("pinfl"), d.kind === "legal" ? d.inn : d.pinfl],
-               [t("address"), [d.region, d.district, d.street, d.house].filter(Boolean).join(", ")]]
+               [t("address"), [d.region, d.district, d.street, d.house].filter(Boolean).join(", ")], [t("cadastr_number"), d.cadastr_number]]
             : [[t("customer"), a.customer_name]];
           return (
             <article className="mcard" key={a.id}>

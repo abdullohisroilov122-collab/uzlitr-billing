@@ -14,8 +14,11 @@ export async function GET(request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   let sent = 0, failed = 0, paused = false;
+  const started = Date.now();
   for (let i = 0; i < 20; i++) {
-    const r = await forwardPending({ limit: 500 });
+    const budgetMs = 45000 - (Date.now() - started);
+    if (budgetMs < 2000) break;
+    const r = await forwardPending({ limit: 500, budgetMs });
     paused = r.paused; sent += r.sent; failed += r.failed;
     if (r.paused || r.sent === 0) break;
   }

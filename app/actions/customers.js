@@ -29,6 +29,7 @@ export async function saveCustomer(formData) {
     district: text(formData, "district"),
     street: text(formData, "street"),
     house: text(formData, "house"),
+    cadastr_number: text(formData, "cadastr_number"),
     latitude: coord(formData, "latitude", 90),
     longitude: coord(formData, "longitude", 180),
     notes: text(formData, "notes")

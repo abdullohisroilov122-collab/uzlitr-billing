@@ -25,8 +25,8 @@ export async function approveApplication(formData) {
       const [loginTaken] = await tx`SELECT 1 FROM users WHERE lower(login) = lower(${app.modem_serial})`;
       if (loginTaken) { error = "app_meter_taken"; return; }
       const [customer] = await tx`
-        INSERT INTO customers (kind, name, phone, inn, pinfl, region, district, street, house)
-        VALUES (${d.kind}, ${d.name}, ${d.phone}, ${d.inn || null}, ${d.pinfl || null}, ${d.region || null}, ${d.district || null}, ${d.street || null}, ${d.house || null})
+        INSERT INTO customers (kind, name, phone, inn, pinfl, region, district, street, house, cadastr_number)
+        VALUES (${d.kind}, ${d.name}, ${d.phone}, ${d.inn || null}, ${d.pinfl || null}, ${d.region || null}, ${d.district || null}, ${d.street || null}, ${d.house || null}, ${d.cadastr_number || null})
         RETURNING id`;
       await tx`UPDATE meters SET customer_id = ${customer.id}, updated_at = now() WHERE id = ${meter.id}`;
       await tx`
