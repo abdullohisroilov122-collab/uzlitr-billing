@@ -31,18 +31,20 @@ export default async function VodokanalCard({ meter, customer }) {
   return (
     <section className="card">
       <h2><span className={`ico ${missing.length ? "c-warn" : "c-ok"}`}><Icon name="send" /></span>{t("vk_title")}</h2>
-      {!customer ? <div className="banner warn">{t("vk_no_customer")}</div>
-        : missing.length ? (
+      {missing.length || !customer ? (
           <div className="banner warn">
             <b>{t("vk_missing")}</b>
-            <ul className="vk-list">{missing.map((k) => {
+            <ul className="vk-list">
+              {!customer && <li><b>{t("vk_no_customer")}</b> → <Link className="link" href="/customers">{t("customers_title")}</Link></li>}
+              {missing.map((k) => {
               const [label, href, where] = WHERE[k];
               return <li key={k}><b>{label}</b> <span className="mono muted">({k})</span>{href && <> → <Link className="link" href={href}>{t(where)}</Link></>}</li>;
-            })}</ul>
+            })}
+            </ul>
           </div>
         ) : <div className="banner ok">✓ {t("vk_ready")}</div>}
       {customer && recommended.length > 0 && <p className="muted" style={{ margin: 0 }}>{t("vk_recommended")} {recommended.join(", ")} → <Link className="link" href={cust}>{t("vk_where_customer")}</Link></p>}
-      {customer && (
+      {(
         <details>
           <summary className="link" style={{ cursor: "pointer" }}>{t("vk_preview")}</summary>
           <div className="codebox" style={{ marginTop: 10 }}>{JSON.stringify(buildPayload(row), null, 2)}</div>
