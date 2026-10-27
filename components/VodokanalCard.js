@@ -20,11 +20,10 @@ export default async function VodokanalCard({ meter, customer }) {
   const WHERE = {
     serialNumber: [t("meter_serial"), edit, "vk_where_meter"], model: [t("model"), edit, "vk_where_meter"],
     manufacturer: [t("manufacturer"), "/models", "vk_where_model"], diameter: [t("diameter"), "/models", "vk_where_model"],
-    personalAccount: [t("account_number"), cust, "vk_where_customer"], INN: [t("vk_pinfl_or_inn"), cust, "vk_where_customer"]
+    personalAccount: [t("account_number"), cust, "vk_where_customer"], cadastr_number: [t("cadastr_number"), cust, "vk_where_customer"], INN: [t("vk_pinfl_or_inn"), cust, "vk_where_customer"]
   };
   const missing = missingFields(row);
   const recommended = customer ? [
-    !customer.cadastr_number && t("cadastr_number"),
     (customer.latitude == null || customer.longitude == null) && `${t("latitude")} / ${t("longitude")}`
   ].filter(Boolean) : [];
 
