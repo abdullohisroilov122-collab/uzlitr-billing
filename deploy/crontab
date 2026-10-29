@@ -1,0 +1,5 @@
+# Times are Tashkent time (TZ in docker-compose.yml).
+# 02:00 database backup, kept 14 days
+0 2 * * * . /etc/cron.env; pg_dump -h db -U uzlitr -d uzlitr | gzip > /backups/uzlitr-$(date +\%Y-\%m-\%d).sql.gz && find /backups -name 'uzlitr-*.sql.gz' -mtime +14 -delete
+# 03:00 retry readings that haven't reached Uztelecom yet, and the offline-meter summary
+0 3 * * * . /etc/cron.env; wget -q -O /dev/null --header="Authorization: Bearer $CRON_SECRET" http://app:3000/api/cron/forward

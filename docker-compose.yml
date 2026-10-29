@@ -1,0 +1,63 @@
+# The whole system on one server: site (app), database (db), HTTPS (caddy),
+# and scheduled jobs (cron: daily Uztelecom sending + daily database backup).
+# Settings come from .env (made by deploy/setup.sh). See deploy/README.md.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: uzlitr
+      POSTGRES_USER: uzlitr
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is missing in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uzlitr -d uzlitr"]
+      interval: 10s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://uzlitr:${DB_PASSWORD}@db:5432/uzlitr
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS is missing in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  cron:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Tashkent
+      PGPASSWORD: ${DB_PASSWORD}
+      CRON_SECRET: ${CRON_SECRET}
+    volumes:
+      - ./deploy/crontab:/etc/crontabs/root:ro
+      - ./deploy/cron.sh:/cron.sh:ro
+      - ./deploy/backups:/backups
+    entrypoint: ["/bin/sh", "/cron.sh"]
+    depends_on:
+      - db
+      - app
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
