@@ -7,14 +7,17 @@ cd /opt/uzlitr
 # which is deleted right after reading; otherwise it is pasted here.
 NEON_FILE=/root/neon.txt
 if [ -s "$NEON_FILE" ]; then
-  NEON=$(tr -d '[:space:]' < "$NEON_FILE")
+  RAW=$(cat "$NEON_FILE")
   shred -u "$NEON_FILE" 2>/dev/null || rm -f "$NEON_FILE"
+  # Accept a whole copied line such as DATABASE_URL="postgresql://…" and keep just the address.
+  NEON=$(printf '%s' "$RAW" | grep -oE "postgres(ql)?://[^\"' [:space:]]+" | head -n1 || true)
+  [ -n "$NEON" ] || { echo "No postgresql:// address found in what was sent (it began with: $(printf '%s' "$RAW" | tr -d '[:space:]' | cut -c1-10)…)."; echo "Copy the DATABASE_URL again and resend it."; exit 1; }
   echo "Using the Neon address from $NEON_FILE (file deleted)."
 else
   echo "Paste the Neon DATABASE_URL with a RIGHT-CLICK (not Ctrl+V), then press Enter."
   echo "It starts with postgresql:// — check it looks right before pressing Enter."
   read -rp "Neon URL: " NEON </dev/tty
-  NEON=$(printf '%s' "$NEON" | tr -d '[:space:]')
+  NEON=$(printf '%s' "$NEON" | grep -oE "postgres(ql)?://[^\"' [:space:]]+" | head -n1 || true)
 fi
 case "$NEON" in postgres://*|postgresql://*) ;; *) echo "That doesn't start with postgresql:// — nothing was changed. Run the script again."; exit 1;; esac
 [ -n "$NEON" ] || { echo "Empty, stopping."; exit 1; }
