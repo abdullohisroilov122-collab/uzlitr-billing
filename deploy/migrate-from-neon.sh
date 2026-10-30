@@ -10,7 +10,10 @@ if [ -s "$NEON_FILE" ]; then
   RAW=$(cat "$NEON_FILE")
   shred -u "$NEON_FILE" 2>/dev/null || rm -f "$NEON_FILE"
   # Accept a whole copied line such as DATABASE_URL="postgresql://…" and keep just the address.
-  NEON=$(printf '%s' "$RAW" | grep -oE "postgres(ql)?://[^\"' [:space:]]+" | head -n1 || true)
+  # A whole copied .env block has several addresses; prefer the direct (non-pooler) one for pg_dump.
+  ALL=$(printf '%s' "$RAW" | grep -oE "postgres(ql)?://[^\"' [:space:]]+" || true)
+  NEON=$(printf '%s\n' "$ALL" | grep -v -- '-pooler' | head -n1 || true)
+  [ -n "$NEON" ] || NEON=$(printf '%s\n' "$ALL" | head -n1 | sed 's/-pooler\././')
   [ -n "$NEON" ] || { echo "No postgresql:// address found in what was sent (it began with: $(printf '%s' "$RAW" | tr -d '[:space:]' | cut -c1-10)…)."; echo "Copy the DATABASE_URL again and resend it."; exit 1; }
   echo "Using the Neon address from $NEON_FILE (file deleted)."
 else
