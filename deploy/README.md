@@ -30,11 +30,14 @@ Oxirida `✅ Done! Open: https://...` chiqadi. Shu manzilni brauzerda oching.
 ## 3. Eski ma'lumotlarni Neon'dan ko'chirish
 
 1. Vercel → loyiha → **Settings → Environment Variables** → `DATABASE_URL` (yoki `POSTGRES_URL`) qiymatini nusxalang.
-2. Serverda:
+2. **Noutbukdagi** PowerShell'da (serverga ulanmasdan, `PS C:\Users\...>` holatida) manzilni nusxalab, quyidagini yozing. U nusxalangan manzilni serverga o'zi yuboradi:
+   ```
+   Get-Clipboard | ssh root@198.163.197.118 "cat > /root/neon.txt"
+   ```
+3. Serverga kiring va ko'chirishni boshlang (`YES` deb tasdiqlaysiz):
    ```
    bash /opt/uzlitr/deploy/migrate-from-neon.sh
    ```
-3. Manzilni joylashtiring (ekranda ko'rinmaydi), Enter bosing, keyin `YES` deb yozing.
 
 Oxirida nechta abonent, hisoblagich va ko'rsatkich ko'chgani chiqadi. Saytga eski telefon va parolingiz bilan kiring.
 

@@ -3,10 +3,19 @@
 # The Neon address is asked for here and never saved to disk.
 set -euo pipefail
 cd /opt/uzlitr
-echo "Paste the Neon DATABASE_URL with a RIGHT-CLICK (not Ctrl+V), then press Enter."
-echo "It starts with postgresql:// — check it looks right before pressing Enter."
-read -rp "Neon URL: " NEON </dev/tty
-NEON=$(printf '%s' "$NEON" | tr -d '[:space:]')
+# The address can come from /root/neon.txt (sent from the laptop's clipboard, see deploy/README.md),
+# which is deleted right after reading; otherwise it is pasted here.
+NEON_FILE=/root/neon.txt
+if [ -s "$NEON_FILE" ]; then
+  NEON=$(tr -d '[:space:]' < "$NEON_FILE")
+  shred -u "$NEON_FILE" 2>/dev/null || rm -f "$NEON_FILE"
+  echo "Using the Neon address from $NEON_FILE (file deleted)."
+else
+  echo "Paste the Neon DATABASE_URL with a RIGHT-CLICK (not Ctrl+V), then press Enter."
+  echo "It starts with postgresql:// — check it looks right before pressing Enter."
+  read -rp "Neon URL: " NEON </dev/tty
+  NEON=$(printf '%s' "$NEON" | tr -d '[:space:]')
+fi
 case "$NEON" in postgres://*|postgresql://*) ;; *) echo "That doesn't start with postgresql:// — nothing was changed. Run the script again."; exit 1;; esac
 [ -n "$NEON" ] || { echo "Empty, stopping."; exit 1; }
 clear
