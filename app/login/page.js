@@ -10,6 +10,12 @@ import LampScene from "./LampScene";
 
 export const dynamic = "force-dynamic";
 
+// The staff (lamp) view stays out of search results; the customer sign-in is the public front page.
+export function generateMetadata({ searchParams }) {
+  if (searchParams?.staff) return { title: "Xodimlar uchun kirish", robots: { index: false, follow: false } };
+  return { title: { absolute: "UZLITRPRO — suv hisoblagichlari kabineti" }, alternates: { canonical: "/login" } };
+}
+
 // One sign-in page for everyone. Customers see the SWEM-style card; ?staff=1 shows the pull-cord lamp for staff.
 // Staff can also sign in from the customer card with their phone number.
 export default async function LoginPage({ searchParams }) {

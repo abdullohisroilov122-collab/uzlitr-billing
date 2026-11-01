@@ -5,6 +5,11 @@ import { REGIONS } from "@/components/CustomerForm";
 import RegisterWizard from "./RegisterWizard";
 
 export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "Hisoblagichni ro'yxatdan o'tkazish",
+  description: "Modem raqamingiz bilan suv hisoblagichini ro'yxatdan o'tkazing va UZLITRPRO shaxsiy kabinetini oching.",
+  alternates: { canonical: "/register" }
+};
 
 export default function RegisterPage() {
   const t = getT();

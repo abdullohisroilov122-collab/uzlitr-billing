@@ -2,11 +2,22 @@ import "./globals.css";
 import { getLang } from "@/lib/i18n";
 import MenuCloser from "@/components/MenuCloser";
 import SoundEffects from "@/components/SoundEffects";
+import { SITE_URL } from "@/lib/site";
+
+const DESCRIPTION = "UZLITRPRO — suv hisoblagichlari ko'rsatkichlari bitta oynada: shaxsiy kabinet, kunlik sarf, hisoblagichni ro'yxatdan o'tkazish.";
 
 export const metadata = {
-  title: "UZLITR Billing",
-  description: "UZLITR suv hisoblagichlari va Vodokanal o'rtasidagi ma'lumotlar ko'prigi",
-  icons: { icon: "/logo.svg" }
+  metadataBase: new URL(SITE_URL),
+  title: { default: "UZLITRPRO — suv hisoblagichlari kabineti", template: "%s — UZLITRPRO" },
+  description: DESCRIPTION,
+  applicationName: "UZLITRPRO",
+  openGraph: {
+    type: "website", siteName: "UZLITRPRO", locale: "uz_UZ", url: "/",
+    title: "UZLITRPRO — suv hisoblagichlari kabineti", description: DESCRIPTION,
+    images: [{ url: "/brand/uzlitrpro-logo.png", alt: "UZLITRPRO" }]
+  },
+  // Search Console can also verify by DNS TXT record; this meta tag is used only when the variable is set.
+  ...(process.env.GOOGLE_SITE_VERIFICATION && { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } })
 };
 
 export default function RootLayout({ children }) {
