@@ -23,6 +23,7 @@ const NAV = [
     { href: "/tokens", key: "nav_tokens", icon: "key", role: "admin" }
   ] },
   { group: "nav_group_system", items: [
+    { href: "/udp", key: "nav_udp", icon: "wifi", role: "admin" },
     { href: "/audit", key: "nav_audit", icon: "log", role: "admin" },
     { href: "/security", key: "nav_security", icon: "shield", role: "admin" },
     { href: "/settings", key: "nav_settings", icon: "gear", role: "operator" }

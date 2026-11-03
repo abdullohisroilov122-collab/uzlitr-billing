@@ -1,4 +1,4 @@
-# The whole system on one server: site (app), database (db), HTTPS (caddy),
+# The whole system on one server: site (app), database (db), modem UDP listener (udp), HTTPS (caddy),
 # and scheduled jobs (cron: daily Uztelecom sending + daily database backup).
 # Settings come from .env (made by deploy/setup.sh). See deploy/README.md.
 services:
@@ -22,6 +22,18 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://uzlitr:${DB_PASSWORD}@db:5432/uzlitr
+    depends_on:
+      db:
+        condition: service_healthy
+
+  udp:
+    build: ./deploy/udp
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://uzlitr:${DB_PASSWORD}@db:5432/uzlitr
+      UDP_PORT: 45370
+    ports:
+      - "45370:45370/udp"
     depends_on:
       db:
         condition: service_healthy

@@ -19,8 +19,8 @@ if ! swapon --show | grep -q /swapfile; then
   grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
-echo "==> 3/5 Firewall: only SSH, HTTP and HTTPS are open…"
-ufw allow OpenSSH >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null
+echo "==> 3/5 Firewall: only SSH, HTTP, HTTPS and the modem UDP port are open…"
+ufw allow OpenSSH >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; ufw allow 45370/udp >/dev/null
 ufw --force enable >/dev/null
 
 echo "==> 4/5 Getting the code…"
