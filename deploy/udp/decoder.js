@@ -59,8 +59,9 @@ function status(st) {
 
 export function decodeFrame(f, now = new Date()) {
   const type = f[1];
-  const addr = f.subarray(2, 8);
-  const serial = hex(Buffer.from(addr).reverse()); // 12 digits, vendor code first
+  // Meter number as printed on the label: all 7 address bytes A6..A0 (A6, the check byte, gives the first two
+  // digits), e.g. 62062026110401.
+  const serial = hex(Buffer.from(f.subarray(2, 9)).reverse());
   const control = f[10], len = f[11], data = f.subarray(12, 12 + len); // f[8] = A6, f[9] = version
   const di = len >= 2 ? hex(data.subarray(0, 2)) : null;
   const base = { type, serial, control, di, reply: bit(control, 7), error: bit(control, 6), csOk: f.csOk !== false };
