@@ -30,6 +30,11 @@ export default async function MeterPage({ params, searchParams }) {
         </div>
       </div>
       <Flash searchParams={searchParams} />
+      {meter.alarms?.length > 0 && (
+        <div className={`banner ${meter.alarms.every((a) => a === "low_battery") ? "warn" : "bad"}`} role="alert">
+          <b>⚠️ {t("al_meter_alarm")}:</b> {meter.alarms.map((a) => t(`alarm_${a}`)).join(", ")}
+        </div>
+      )}
       <MeterDashboard meter={meter} customer={customer} period={period}
         readingsHref={`/meters/${meter.id}/readings`} periodHref={(p) => `/meters/${meter.id}?period=${p}`} />
       <VodokanalCard meter={meter} customer={customer} />

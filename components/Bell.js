@@ -14,7 +14,8 @@ export default function Bell({ alerts, hrefFor }) {
     battery: [t("al_battery"), t("al_battery_d", { v: a.value?.toFixed(2) })],
     leak: [t("al_leak"), t("al_leak_d", { v: a.value?.toFixed(3) })],
     forward: [t("al_forward"), t("al_forward_d", { n: a.value })],
-    application: [t("al_application"), t("al_application_d", { n: a.value })]
+    application: [t("al_application"), t("al_application_d", { n: a.value })],
+    meter_alarm: [t("al_meter_alarm"), (a.alarms || []).map((k) => t(`alarm_${k}`)).join(", ")]
   }[a.type]);
   return (
     <details className="menu">

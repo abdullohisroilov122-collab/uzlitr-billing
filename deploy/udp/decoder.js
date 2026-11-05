@@ -57,6 +57,20 @@ function status(st) {
   };
 }
 
+// Meter alarms worth telling people about, as short codes (translated in the app as alarm_<code>).
+export function alarmCodes(st) {
+  if (!st) return [];
+  const codes = [];
+  if (st.tamper) codes.push("pulse_cut");
+  if (st.magnet) codes.push("magnet");
+  if (st.pipeLeak || st.valveLeak) codes.push("leak");
+  if (st.reverseFlow) codes.push("reverse_flow");
+  if (st.sensorFault || st.meteringFault) codes.push("sensor_fault");
+  if (st.valveFault) codes.push("valve_fault");
+  if (st.lowBattery) codes.push("low_battery");
+  return codes;
+}
+
 export function decodeFrame(f, now = new Date()) {
   const type = f[1];
   // Meter number as printed on the label: all 7 address bytes A6..A0 (A6, the check byte, gives the first two
