@@ -79,6 +79,19 @@ export function decodeFrame(f, now = new Date()) {
       status: status(data.subarray(27, 31)), statusHex: hex(data.subarray(27, 31)), order: data[31]
     };
   }
+  // HyZim's extended upload (not in their manual; worked out from real packets and the known 1.23 m³):
+  // DI 905F, units (forward, reverse, flow), 00, forward total (4), reverse total (4), status (2), 00,
+  // battery voltage ×0.1 V (assumed: 35–38 seen), then hourly history. No clock: the receive time is used.
+  if (di === "905F" && len >= 18) {
+    return {
+      ...base, kind: "reading",
+      forward: le(data, 6, 4) / 10 ** (VOLUME_DECIMALS[data[2]] ?? 3),
+      reverse: le(data, 10, 4) / 10 ** (VOLUME_DECIMALS[data[3]] ?? 3),
+      battery: data[17] ? data[17] / 10 : null,
+      measuredAt: now, meterTime: null, clockOk: false,
+      status: status(Buffer.from([data[14], data[15], 0, 0])), statusHex: hex(data.subarray(14, 18))
+    };
+  }
   if (di === "A026" && len >= 9) {
     const time = meterTime(data, 2, now);
     return { ...base, kind: "heartbeat", meterTime: time.text };

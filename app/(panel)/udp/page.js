@@ -14,7 +14,8 @@ function Decoded({ items, t }) {
       const alarms = ALARMS.filter((k) => d.status?.[k]);
       return (
         <div key={i}>
-          <b className="mono">{d.serial}</b> · <b>{d.forward} m³</b> · <span className="muted">{d.meterTime}</span>
+          <b className="mono">{d.serial}</b> · <b>{d.forward} m³</b>{d.meterTime && <span className="muted"> · {d.meterTime}</span>}
+          {d.battery != null && <span className="muted"> · 🔋 {d.battery} V</span>}
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
             <span className={`chip ${d.status?.valve === "closed" ? "c-warn" : "c-ok"}`}>{t("udp_valve")}: {t(`udp_valve_${d.status?.valve}`)}</span>
             {alarms.map((a) => <span key={a} className="chip c-bad">{a}</span>)}
