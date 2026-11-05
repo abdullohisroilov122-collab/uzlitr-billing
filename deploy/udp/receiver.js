@@ -26,11 +26,12 @@ async function storeReading(r) {
     ON CONFLICT (modem_serial) DO UPDATE SET modem_serial = EXCLUDED.modem_serial
     RETURNING id`;
   const [inserted] = await sql`
-    INSERT INTO readings (meter_id, value, battery, measured_at)
-    VALUES (${meter.id}, ${r.forward}, ${r.battery ?? null}, ${r.measuredAt})
+    INSERT INTO readings (meter_id, value, battery, signal, measured_at)
+    VALUES (${meter.id}, ${r.forward}, ${r.battery ?? null}, ${r.signal ?? null}, ${r.measuredAt})
     ON CONFLICT (meter_id, measured_at) DO NOTHING RETURNING id`;
   await sql`
     UPDATE meters SET last_value = ${r.forward}, last_battery = coalesce(${r.battery ?? null}, last_battery),
+      last_signal = coalesce(${r.signal ?? null}, last_signal),
       last_seen_at = ${r.measuredAt}, updated_at = now()
     WHERE id = ${meter.id} AND (last_seen_at IS NULL OR last_seen_at <= ${r.measuredAt})`;
   return { meterId: meter.id, duplicate: !inserted };

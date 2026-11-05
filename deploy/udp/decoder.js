@@ -79,17 +79,24 @@ export function decodeFrame(f, now = new Date()) {
       status: status(data.subarray(27, 31)), statusHex: hex(data.subarray(27, 31)), order: data[31]
     };
   }
-  // HyZim's extended upload (not in their manual; worked out from real packets and the known 1.23 m³):
-  // DI 905F, units (forward, reverse, flow), 00, forward total (4), reverse total (4), status (2), 00,
-  // battery voltage ×0.1 V (assumed: 35–38 seen), then hourly history. No clock: the receive time is used.
-  if (di === "905F" && len >= 18) {
+  // HyZim's DI 905F upload (layout from the manufacturer's "NB-IoT protocol case"): units (forward, reverse,
+  // flow), spare, forward total (4), remaining amount (4), status (3) + battery ×0.1 V (1), recharge ID,
+  // reverse total (4), instantaneous flow (4), pressure, 24 hourly totals of 5 bytes, signal, SNR.
+  // No clock in the packet: the receive time is used.
+  if (di === "905F" && len >= 28) {
+    const int8 = (v) => (v > 127 ? v - 256 : v);
     return {
       ...base, kind: "reading",
       forward: le(data, 6, 4) / 10 ** (VOLUME_DECIMALS[data[2]] ?? 3),
-      reverse: le(data, 10, 4) / 10 ** (VOLUME_DECIMALS[data[3]] ?? 3),
+      remaining: (le(data, 10, 4) | 0) / 100,
       battery: data[17] ? data[17] / 10 : null,
+      reverse: le(data, 19, 4) / 10 ** (VOLUME_DECIMALS[data[3]] ?? 3),
+      flow: le(data, 23, 4) / 10 ** (FLOW_DECIMALS[data[4]] ?? 2),
+      pressure: data[27],
+      signal: len >= 150 ? int8(data[148]) : null,
+      snr: len >= 150 ? int8(data[149]) : null,
       measuredAt: now, meterTime: null, clockOk: false,
-      status: status(Buffer.from([data[14], data[15], 0, 0])), statusHex: hex(data.subarray(14, 18))
+      status: status(Buffer.from([data[14], data[15], data[16], 0])), statusHex: hex(data.subarray(14, 17))
     };
   }
   if (di === "A026" && len >= 9) {
