@@ -44,7 +44,7 @@ function status(st) {
   return {
     valve: bit(st[0], 0) ? "closed" : "open",
     lowBattery: bit(st[0], 1) || bit(st[1], 1),
-    tamper: bit(st[0], 4),
+    tamper: bit(st[0], 4), // on HyZim pulse readers: the pulse line to the meter is disconnected
     meteringFault: bit(st[0], 7),
     valveFault: bit(st[1], 0),
     reverseFlow: bit(st[1], 2),

@@ -19,7 +19,7 @@ function Decoded({ items, t }) {
           {d.signal != null && <span className="muted"> · 📶 {d.signal}</span>}
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
             <span className={`chip ${d.status?.valve === "closed" ? "c-warn" : "c-ok"}`}>{t("udp_valve")}: {t(`udp_valve_${d.status?.valve}`)}</span>
-            {alarms.map((a) => <span key={a} className="chip c-bad">{a}</span>)}
+            {alarms.map((a) => <span key={a} className="chip c-bad">{a === "tamper" ? `🔌 ${t("udp_pulse_cut")}` : a}</span>)}
             {!d.csOk && <span className="chip c-bad">CS ✗</span>}
             {d.duplicate && <span className="chip c-mut">{t("udp_duplicate")}</span>}
           </div>
